@@ -14,7 +14,7 @@ features = [
 #    "Arithmancy", homogeneous
     "Astronomy",
     "Herbology",
-#    "Defense Against the Dark Arts", linked to Astronomy
+#    "Defense Against the Dark Arts", similar to Astronomy
     "Divination",
     "Muggle Studies",
     "Ancient Runes",
@@ -29,15 +29,6 @@ features = [
 # on va faire 4 theta, un pour chaque maison (one vs all)
 
 ######################################################################
-df = pd.read_csv("datasets/dataset_train.csv")
-
-# normalize data
-for column in features:
-    df[column] = (df[column] - df[column].mean()) / df[column].std()
-
-
-df_train = df.sample(frac=0.5, random_state=0)
-df_test = df.drop(df_train.index)
 
 
 def sigmoid(x):
@@ -86,9 +77,9 @@ def gradient(theta, house):
 
 def train(house):
     theta = np.ndarray(len(features) + 1)
-    for i in range(20):
+    for i in range(10):
         print("iter :", i, "accuracy :", onevsall_accuracy(theta, house, df_test), end='\r')
-        theta -= 0.00001 * gradient(theta, house)
+        theta -= 0.001 * gradient(theta, house)
     return theta
 
 def onevsall_accuracy(theta, house, data):
@@ -97,12 +88,6 @@ def onevsall_accuracy(theta, house, data):
         if (predict(theta, student) > 0.5) == (student["Hogwarts House"] == house):
             correct += 1
     return correct / len(data)
-
-thetas = {}
-for house in houses:
-    thetas[house] = train(house)
-    print(house, "trainset accuracy :", onevsall_accuracy(thetas[house], house, df_train))
-    print(house, "testset accuracy :", onevsall_accuracy(thetas[house], house, df_test))
 
 def accuracy(thetas, data):
     correct = 0
@@ -116,6 +101,29 @@ def accuracy(thetas, data):
             correct += 1
     return correct / len(data)
 
+##################################################################################
+
+df = pd.read_csv("datasets/dataset_train.csv")
+
+# normalize data
+for column in features:
+    df[column] = (df[column] - df[column].mean()) / df[column].std()
+
+
+df_train = df.sample(frac=0.2)
+df_test = df.drop(df_train.index)
+
+thetas = {}
+for house in houses:
+    print(house, ':')
+    thetas[house] = train(house)
+    print("\ttrainset accuracy :", onevsall_accuracy(thetas[house], house, df_train))
+    print("\ttestset accuracy :", onevsall_accuracy(thetas[house], house, df_test))
+
+
 print("trainset accuracy :", accuracy(thetas, df_train))
 print("testset accuracy :", accuracy(thetas, df_test))
 
+# sauvegarde des donnees dans result.csv
+resfile = pd.DataFrame()
+resfile.to_csv('thetas.csv', index=False)
